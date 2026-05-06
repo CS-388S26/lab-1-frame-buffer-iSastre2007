@@ -9,6 +9,7 @@
 #define COLOR_COMP 4
 
 namespace Rasterizer
+
 {
 	// ------------------------------------------------------------------------
 	// Our framebuffer
@@ -19,10 +20,14 @@ namespace Rasterizer
 	// ---------------------------------------------------------------------------
 	// TODO
 	// \fn		Delete
-	// \brief	Free the memory allocated in the function above. 
+	// \brief	Free the memory allocated in the function above.
 	void FrameBuffer::Delete()
 	{
-
+		if (frameBuffer)
+		{
+			delete[] frameBuffer;
+			frameBuffer = nullptr;
+		}
 	}
 
 	// ---------------------------------------------------------------------------
@@ -31,6 +36,14 @@ namespace Rasterizer
 	// \brief	Allocate memory for the frame buffer given by the width and height. 
 	bool FrameBuffer::Allocate(unsigned int width, unsigned int height)
 	{
+		//Clear anything we could have
+		Delete();
+		
+		//Set values
+		frameBuffer = new unsigned char[width * height * COLOR_COMP];
+		frameBufferHeight = height;
+		frameBufferWidth = width;
+
 		return true;
 	}
 
@@ -77,7 +90,7 @@ namespace Rasterizer
 	// \brief	Returns the pointer to the frame buffer variable
 	unsigned char *	FrameBuffer::GetBufferData()
 	{
-		return {};
+		return frameBuffer;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -86,7 +99,7 @@ namespace Rasterizer
 	// \brief	Returns the width of the frame buffer.
 	unsigned int		FrameBuffer::GetWidth()
 	{
-		return {};
+		return frameBufferWidth;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -95,7 +108,7 @@ namespace Rasterizer
 	// \brief	Returns the height of the frame buffer.
 	unsigned int		FrameBuffer::GetHeight()
 	{
-		return {};
+		return frameBufferHeight;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -104,7 +117,7 @@ namespace Rasterizer
 	// \brief	Sets the entire frame buffer to the provided color.
 	void FrameBuffer::Clear(const Color & c)
 	{
-
+		Clear(c.r * 255, c.g * 255, c.b * 255, c.a * 255);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -113,7 +126,14 @@ namespace Rasterizer
 	// \brief	Sets the entire frame buffer to the provided color in rgb format
 	void FrameBuffer::Clear(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 	{
-
+		int max = frameBufferHeight * frameBufferWidth * COLOR_COMP;
+		for (int i = 0; i < max; i += COLOR_COMP)
+		{
+			frameBuffer[i + 0] = r;
+			frameBuffer[i + 1] = g;
+			frameBuffer[i + 2] = b;
+			frameBuffer[i + 3] = a;
+		}
 	}
 
 	// ---------------------------------------------------------------------------
@@ -122,7 +142,18 @@ namespace Rasterizer
 	// \brief	Sets the pixel at position x, y to the provided color. 
 	void FrameBuffer::SetPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 	{
+		//Sanity check
+		if (x >= frameBufferWidth)
+			return;
+		if (y >= frameBufferHeight)
+			return;
 
+		//Set that pixel
+		int idx = (y * frameBufferWidth + x) * COLOR_COMP;
+		frameBuffer[idx + 0] = r;
+		frameBuffer[idx + 1] = g;
+		frameBuffer[idx + 2] = b;
+		frameBuffer[idx + 3] = a;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -131,7 +162,7 @@ namespace Rasterizer
 	// \brief	Sets the pixel at position x, y to the provided color. 
 	void FrameBuffer::SetPixel(unsigned int x, unsigned int y, const Color& c)
 	{
-
+		SetPixel(x, y, c.r * 255, c.g * 255, c.b * 255, c.a * 255);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -140,7 +171,19 @@ namespace Rasterizer
 	// \brief	Returns the color of the pixel at position x, y.
 	Color FrameBuffer::GetPixel(unsigned int x, unsigned int y)
 	{		
-		return {};
+		if (x >= frameBufferWidth || y >= frameBufferHeight)
+			return Color();
+
+		//Get idx and then normalizing color
+		int idx = (x + y * frameBufferWidth) * COLOR_COMP;
+
+		Color c;
+		c.r = frameBuffer[idx + 0] / 255.0f;
+		c.g = frameBuffer[idx + 1] / 255.0f;
+		c.b = frameBuffer[idx + 2] / 255.0f;
+		c.a = frameBuffer[idx + 3] / 255.0f;
+
+		return c;
 	}
 
 	// ---------------------------------------------------------------------------
